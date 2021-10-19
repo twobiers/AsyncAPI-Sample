@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v2
       
     - name: Generating HTML from my AsyncAPI document
-      uses: asyncapi/github-action-for-generator@v1
+      uses: asyncapi/github-action-for-generator@v1.0.48
       with:
         template: '@asyncapi/html-template@0.23.11'
         filepath: asyncapi.yml
