@@ -21,29 +21,37 @@ servers:
   production:
     url: kafka.the-microservice-dungeon.github.io
     description: Prod
-    protocol: kafka # Where Using Kafka for eventing, so this should be fixed
+    protocol: kafka # We're using Kafka for eventing, so this should be fixed
     protocolVersion: 1.0.0 # Couldn't find the correct version, value taken from AsyncAPI documentation
-    # I don't know how kafka is secured and whether the jwt security scheme is appliable to the kafka protocol. This is just a reference
+    # I don't know how kafka is secured and whether the jwt security scheme is appliable to the kafka protocol. 
+    # This is just a reference, and it would make sense to get the DevOps Team into account for defining 
+    # or dropping security
     security: 
-      # defined in #/components/securitySchemes/jwt
+      # jwt defined in #/components/securitySchemes/jwt
       - jwt: []
 
 # Globally set the default content type. Used, when content type is omitted in further defined schemas
+# We're **probably** going to use json, therefore this is pinned
 defaultContentType: application/json 
 
 channels:
   user/signedup:
-    # The Application allows Consumers to subscribe to the channel to recieve messages
+    # Please make your life easier and use a multiline string
     description: |
       This channel is used for exchanging events about user registration. 
       Will be fired each time a user signs up
     # It is crucial to understand, that "subscribe" DOES NOT MEAN, that the defined application 
     # subscribes to this event, the application OFFERS a subscription and would therefore PUBLISH
     # weird but ok? Makes sense kinda, even if its unintuitive
+    # The Application allows Consumers to subscribe to the channel to recieve messages
     subscribe:
+      # SHORT summary
       summary: A user sigend up
+      # Tags defined in #/tags, probably not necessary since every service is already bound to 
+      # a specific context
       tags:
         - name: user
+      # Don't define the messages inline, use a separate component
       message:
         $ref: '#/components/messages/UserSignedUp'
       # We could do some additional protocol bindings here, but i don't think it's really 
@@ -93,6 +101,7 @@ channels:
       message:
         payload:
           type: string
+          # You can use various validations, even regex
           pattern: '^hello .+$'
 
 components:
