@@ -23,7 +23,10 @@ servers:
     description: Prod
     protocol: kafka # Where Using Kafka for eventing, so this should be fixed
     protocolVersion: 1.0.0 # Couldn't find the correct version, value taken from AsyncAPI documentation
-    # TODO security: 
+    # I don't know how kafka is secured and whether the jwt security scheme is appliable to the kafka protocol. This is just a reference
+    security: 
+      # defined in #/components/securitySchemes/jwt
+      - jwt: []
 
 # Globally set the default content type. Used, when content type is omitted in further defined schemas
 defaultContentType: application/json 
@@ -34,13 +37,26 @@ channels:
     description: |
       This channel is used for exchanging events about user registration. 
       Will be fired each time a user signs up
+    # It is crucial to understand, that "subscribe" DOES NOT MEAN, that the defined application 
+    # subscribes to this event, the application OFFERS a subscription and would therefore PUBLISH
+    # weird but ok? Makes sense kinda, even if its unintuitive
     subscribe:
       summary: A user sigend up
       tags:
         - name: user
       message:
         $ref: '#/components/messages/UserSignedUp'
-    # TODO Kafka bindings necessary? bindings:
+      # We could do some additional protocol bindings here, but i don't think it's really 
+      # necessary unless we use a schema registry. Maybe the DevOps Team should be also involved
+      bindings:
+        kafka:
+          groupId:
+            type: string
+            enum: ['myGroupId']
+          clientId:
+            type: string
+            enum: ['myClientId']
+          bindingVersion: '0.2.0'
   user/login:
     description: |
       Used for exchanging events about login state
@@ -55,6 +71,29 @@ channels:
         oneOf:
           - $ref: '#/components/messages/UserLoggedIn'
           - $ref: '#/components/messages/UserLoggedOut'
+  user/{userId}/delete:
+    description: |
+      User with Id removes his/her account
+    # Path Variable
+    parameters:
+      userId:
+        description: User ID
+        schema:
+          type: string
+          format: uuid
+    subscribe:
+      tags:
+        - name: user
+      message:
+        $ref: '#/components/messages/UserDeleted'
+  hello:
+    publish:
+      tags:
+        - name: hello
+      message:
+        payload:
+          type: string
+          pattern: '^hello .+$'
 
 components:
   messages:
@@ -77,6 +116,14 @@ components:
           payload:
             displayName: tobi6112
             email: 22715034+tobi6112@users.noreply.github.com
+      # We could do some additional protocol bindings here, but i don't think it's really 
+      # necessary unless we use a schema registry. Maybe the DevOps Team should be also involved
+      bindings:
+        kafka:
+          key:
+            type: string
+            enum: ['myKey']
+          bindingVersion: '0.2.0'
     UserLoggedIn:
       payload:
         type: object
@@ -99,7 +146,23 @@ components:
             type: string
             format: date-time
             description: When the user Logged out
+    UserDeleted:
+      payload:
+        type: object
+        properties:
+          deleteTime:
+            type: string
+            format: date-time
+            description: When the user Deleted
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: jwt
+
 
 tags:
   - name: user
     description: User-related messages
+  - name: hello
+    description: Hello World
