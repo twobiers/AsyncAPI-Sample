@@ -1,16 +1,65 @@
+# AsyncAPI Spec version
 asyncapi: 2.2.0 
+
+# Unique Application Identifier, recommended to use URN
+id: 'urn:io:github:the-microservice-dungeon:account'
+
+# Info Object
 info:
+  # Required
   title: Account Service
-  version: 1.0.0
-  description: This service is in charge of processing user signups
+  version: 1.0.0 # Should increment with each change, e.g. using SemVer
+  # Optional
+  description: This service manages user accounts
+  # Maybe necessary for the Responsible(s)?
+  contact:
+    name: Tobi
+    email: 22715034+tobi6112@users.noreply.github.com
+
+# Provide a list of active servers where the API can be used
+servers:
+  production:
+    url: kafka.the-microservice-dungeon.github.io
+    description: Prod
+    protocol: kafka # Where Using Kafka for eventing, so this should be fixed
+    protocolVersion: 1.0.0 # Couldn't find the correct version, value taken from AsyncAPI documentation
+    # TODO security: 
+
+# Globally set the default content type. Used, when content type is omitted in further defined schemas
+defaultContentType: application/json 
+
 channels:
   user/signedup:
+    # The Application allows Consumers to subscribe to the channel to recieve messages
+    description: |
+      This channel is used for exchanging events about user registration. 
+      Will be fired each time a user signs up
     subscribe:
+      summary: A user sigend up
+      tags:
+        - name: user
       message:
         $ref: '#/components/messages/UserSignedUp'
+    # TODO Kafka bindings necessary? bindings:
+  user/login:
+    description: |
+      Used for exchanging events about login state
+    subscribe:
+      summary: Login State for user updated
+      tags:
+        - name: user
+      message:
+        # You can validate against multiple or composed JSON schemes
+        # In a real-case scenario you won't define separate UserLoggedIn and UserLoggedOut message objects, 
+        # they are only used for illustration purposes on how to compose scheme validation with multiple objects
+        oneOf:
+          - $ref: '#/components/messages/UserLoggedIn'
+          - $ref: '#/components/messages/UserLoggedOut'
+
 components:
   messages:
     UserSignedUp:
+      description: Description about the message object.
       payload:
         type: object
         properties:
@@ -21,3 +70,36 @@ components:
             type: string
             format: email
             description: Email of the user
+      # Not required, but may be extremly nice to have.
+      examples:
+        - name: SimpleSignup
+          summary: A simple UserSignup example message
+          payload:
+            displayName: tobi6112
+            email: 22715034+tobi6112@users.noreply.github.com
+    UserLoggedIn:
+      payload:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          loginTime:
+            type: string
+            format: date-time
+            description: When the user Logged in
+    UserLoggedOut:
+      payload:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          logoutTime:
+            type: string
+            format: date-time
+            description: When the user Logged out
+
+tags:
+  - name: user
+    description: User-related messages
